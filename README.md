@@ -1,2 +1,4 @@
 # AndroidHookDemo
-兼容Android各个版本的hook startActivity的demo
+兼容Android各个版本的hook ActivityManager demo，可以拦截startActivity做一些事情；
+比如接入广告SDK后，有些流氓广告落地页会循环跳转第三方应用，就可以用这种方式拦截做一些业务处理。
+
