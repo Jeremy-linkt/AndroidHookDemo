@@ -18,7 +18,7 @@ public class HookUtil {
     }
 
     /**
-     * 为了兼容android 10，需要在第一个activity启动时再调用，不能在application的初始化中调用，否则instance会获取不到
+     * 为了兼容android 10，需要在第一个activity启动时再调用，不能在application的初始化中调用，否则instance为null
      * @throws ClassNotFoundException
      * @throws NoSuchFieldException
      * @throws IllegalAccessException
@@ -28,7 +28,7 @@ public class HookUtil {
         Log.i(TAG,"hookAm,SDK:" + Build.VERSION.SDK_INT);
 
         Field gdefaultField;
-        Class<?> amClass;
+        Class<?> amClass;//最终想要拿到的对象类型
         if (Build.VERSION.SDK_INT > 28) {//android 10
             Class<?> amnClass = Class.forName("android.app.ActivityTaskManager");
             gdefaultField = amnClass.getDeclaredField("IActivityTaskManagerSingleton");
@@ -42,16 +42,21 @@ public class HookUtil {
             gdefaultField = amnClass.getDeclaredField("gDefault");
             amClass = Class.forName("android.app.IActivityManager");
         }
+
+        //先拿到gDefault对象，gDefault是static的，所以传null就可以
         gdefaultField.setAccessible(true);
         Object gDefault = gdefaultField.get(null);
         Log.i(TAG,"gDefault:" + gDefault);
 
+        //反射Singleton
         Class<?> singletonClass = Class.forName("android.util.Singleton");
         Field mInstanceField = singletonClass.getDeclaredField("mInstance");
         mInstanceField.setAccessible(true);
+        //这里拿到IActivityManager对象，Android 10是IActivityTaskManager
         Object instance = mInstanceField.get(gDefault);
         Log.i(TAG,"instance:" + instance);
 
+        //动态代理，用amProxy代理对象，替换掉原本的IActivityManager对象,也就是gDefault中的mInstance
         ActivityManagerHandler activityManagerHandler = new ActivityManagerHandler(instance);
         Object amProxy = Proxy.newProxyInstance(
                 ClassLoader.getSystemClassLoader(),
